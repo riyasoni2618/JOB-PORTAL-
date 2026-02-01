@@ -22,12 +22,25 @@ const filterData = [
 const FilterCard = () => {
     const [selectedValue, setSelectedValue] = useState('');
     const dispatch = useDispatch();
+    
     const changeHandler = (value) => {
         setSelectedValue(value);
+        dispatch(setSearchedQuery(value));
     }
+    
+    
     useEffect(()=>{
-        dispatch(setSearchedQuery(selectedValue));
-    },[selectedValue]);
+        // Check if selected value is a location
+        const locationValues = filterData.find(f => f.filterType === "Location")?.array || [];
+        const isLocationFilter = locationValues.includes(selectedValue);
+        
+        // Prefix location filters with "location:" to identify them
+        if (isLocationFilter && selectedValue) {
+            dispatch(setSearchedQuery(`location:${selectedValue}`));
+        } else {
+            dispatch(setSearchedQuery(selectedValue));
+        }
+    },[selectedValue, dispatch]);
     return (
         <div className='w-full bg-white p-3 rounded-md'>
             <h1 className='font-bold text-lg'>Filter Jobs</h1>

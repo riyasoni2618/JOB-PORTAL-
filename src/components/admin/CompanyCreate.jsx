@@ -5,8 +5,8 @@ import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
- import { COMPANY_API_END_POINT } from '@/utils/constants'
-// import { toast } from 'sonner'
+import { COMPANY_API_END_POINT } from '@/utils/constants'
+import { toast } from 'sonner'
 import { useDispatch } from 'react-redux'
 import { setSingleCompany } from '@/redux/companySlice'
 
@@ -15,22 +15,46 @@ const CompanyCreate = () => {
     const [companyName, setCompanyName] = useState();
      const dispatch = useDispatch();
     const registerNewCompany = async () => {
+        if (!companyName || companyName.trim() === "") {
+            toast.error("Please enter a company name");
+            return;
+        }
+        
         try {
+            console.log("🚀 Registering company:", companyName);
+            console.log("🔗 API Endpoint:", `${COMPANY_API_END_POINT}/register`);
+            
             const res = await axios.post(`${COMPANY_API_END_POINT}/register`, {companyName}, {
                 headers:{
                     'Content-Type':'application/json',
                 },
                 withCredentials:true
             });
+            
+            console.log("✅ Response:", res.data);
+            
             if(res?.data?.success){
                 dispatch(setSingleCompany(res.data.company));
                 toast.success(res.data.message);
                 const companyId = res?.data?.company?._id;
                 navigate(`/admin/companies/${companyId}`);
+            } else {
+                toast.error(res.data.message || "Failed to create company");
             }
         } catch (error) {
-            console.log(error.response?.data);
-           console.log(error);
+            console.error("❌ Company Registration Error:", error);
+            console.error("❌ Error Response:", error.response?.data);
+            console.error("❌ Error Status:", error.response?.status);
+            
+            if (error.response?.status === 401) {
+                toast.error("Authentication failed. Please login again.");
+            } else if (error.response?.data?.message) {
+                toast.error(error.response.data.message);
+            } else if (error.message === "Network Error") {
+                toast.error("Cannot connect to server. Please check if the backend is running.");
+            } else {
+                toast.error("Failed to create company. Please try again.");
+            }
         }
     }
     return (
